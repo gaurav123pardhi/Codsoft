@@ -1,1 +1,110 @@
-Task 4/ Quiz_Application_with_Timer.java
+
+//Quiz application using java
+
+import java.util.*;
+
+public class Quiz_Application {
+
+    static class Question {
+        String question;
+        String[] options;
+        int correctAnswer; // Index (0-3)
+
+        Question(String question, String[] options, int correctAnswer) {
+            this.question = question;
+            this.options = options;
+            this.correctAnswer = correctAnswer;
+        }
+    }
+
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+
+        List<Question> questions = new ArrayList<>();
+        questions.add(new Question("What is the capital of India ?", new String[]{"Maharashtra", "Delhi", "Goa", "Rajasthan"}, 1));
+        questions.add(new Question("Which language is used to style web pages ?", new String[]{"HTML", "CSS", "Java", "Python"}, 1));
+        questions.add(new Question("Which gas do plants absorb from the atmosphere ?", new String[]{"Carbon dioxide", "Hydrogen", "Oxygen", "Nitrogen"}, 0));
+        questions.add(new Question("What is 10 + 5 ?", new String[]{"12", "13", "15", "14"}, 2));
+        questions.add(new Question("What is the square root of 64 ?", new String[]{"6", "7", "8", "9"}, 2));
+
+        int score = 0;
+        List<String> summary = new ArrayList<>();
+
+        System.out.println("Welcome to the Quiz!");
+        System.out.println("You have only 15 seconds to answer each question.\n");
+
+        for (int i = 0; i < questions.size(); i++) {
+            Question q = questions.get(i);
+            System.out.println("Q" + (i + 1) + ": " + q.question);
+            for (int j = 0; j < q.options.length; j++) {
+                System.out.println((j + 1) + ". " + q.options[j]);
+            }
+
+            Timer timer = new Timer();
+            AnswerTask task = new AnswerTask(sc);
+            timer.schedule(task, 10000);
+
+            while (!task.isAnswered && !task.isTimeout) {
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            timer.cancel();
+
+            if (task.isTimeout) {
+                System.out.println("⏰ Your Time's up! Moving to next question.");
+                summary.add("Q" + (i + 1) + ": Wrong (Timed Out)");
+            } else {
+                if (task.answer == (q.correctAnswer + 1)) {
+                    System.out.println("✅ Correct!\n");
+                    score++;
+                    summary.add("Q" + (i + 1) + ": Correct");
+                } else {
+                    System.out.println("❌ Wrong! Correct answer: " + (q.correctAnswer + 1) + ". " + q.options[q.correctAnswer] + "\n");
+                    summary.add("Q" + (i + 1) + ": Wrong");
+                }
+            }
+        }
+
+        System.out.println("\n🎯 Quiz Completed!");
+        System.out.println("Your Score: " + score + "/" + questions.size());
+        System.out.println("\n📊 Summary:");
+        for (String result : summary) {
+            System.out.println(result);
+        }
+
+        sc.close();
+    }
+
+    static class AnswerTask extends TimerTask {
+        volatile boolean isAnswered = false;
+        volatile boolean isTimeout = false;
+        int answer = -1;
+        Scanner sc;
+
+        AnswerTask(Scanner sc) {
+            this.sc = sc;
+            new Thread(() -> {
+                try {
+                    System.out.print("Enter your answer (1-4): ");
+                    if (sc.hasNextInt()) {
+                        answer = sc.nextInt();
+                        isAnswered = true;
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }).start();
+        }
+
+        public void run() {
+            if (!isAnswered) {
+                isTimeout = true;
+                System.out.println("\n⏳ Time expired!");
+            }
+        }
+    }
+}
